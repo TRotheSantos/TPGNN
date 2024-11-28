@@ -93,7 +93,7 @@ def transform_time(data: torch.Tensor, train: bool, opt: object, start: int, tim
         T4N_step = opt.T4N['step']
         
         n_day = len(data) // day_slot
-        n_slot = 288 * n_day
+        n_slot = 96 * n_day
 
         if train:
             n_slot = day_slot - n_his - n_pred - T4N_step + 2
@@ -220,7 +220,7 @@ class STAGNN_stamp_Dataset(torch.utils.data.Dataset):
         '''
         data = pd.read_csv(opt.data_path, header=None).values.astype(float)  # -> np.ndarray
         
-        sub_label = np.load(opt.stamp_path)
+        sub_label = np.load(opt.stamp_path, allow_pickle=True)
         # print(sub_label.shape)
         T = sub_label.shape
         # sub_label = sub_label.reshape(T, 1, 1)

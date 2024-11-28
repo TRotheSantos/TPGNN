@@ -71,9 +71,9 @@ class TempoEnc(nn.Module):
     def forward(self, x, start=0, t_left=None):
         length = x.shape[-2]
         if t_left == None:
-            enc = self.enc(torch.arange(start, start + length).cuda())
+            enc = self.enc(torch.arange(start, start + length))
         else:
-            enc = self.enc(torch.Tensor(t_left).long().cuda())
+            enc = self.enc(torch.Tensor(t_left).long())
         x = x + enc
         if self.no:
             x = self.norm(x)

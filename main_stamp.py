@@ -23,7 +23,7 @@ sys.stdout = Logger(opt.record_path)
 # random seed
 seed = opt.seed
 torch.manual_seed(seed)
-torch.cuda.manual_seed(seed)
+# torch.cuda.manual_seed(seed)
 np.random.seed(seed)
 random.seed(seed)
 torch.backends.cudnn.deterministic = True
@@ -33,10 +33,11 @@ def test(model, loss_fn, test_iter, opt):
     model.eval()
     loss_sum, n = 0.0, 0
     for x, stamp, y in test_iter:
-        x, stamp, y = x.cuda(), stamp.cuda(), y.cuda()
-        x = x.type(torch.cuda.FloatTensor)
-        stamp = stamp.type(torch.cuda.LongTensor)
-        y = y.type(torch.cuda.FloatTensor)
+        # MODIFICATION: Removing cuda in every line
+        x, stamp, y = x, stamp, y
+        x = x.type(torch.FloatTensor)
+        stamp = stamp.type(torch.LongTensor)
+        y = y.type(torch.FloatTensor)
 
         y_pred = predict_stamp(model, x, stamp, y, opt)
 
@@ -48,11 +49,13 @@ def test(model, loss_fn, test_iter, opt):
 
 def train(**kwargs):
     opt.parse(kwargs)
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(opt.device)
+    # MODIFICATION: Remove environment variable for GPU
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''          #  str(opt.device)
     # adj matrix
     if opt.adj_matrix_path != None:
         opt.dis_mat = weight_matrix_nl(opt.adj_matrix_path, epsilon=opt.eps)
-        opt.dis_mat = torch.from_numpy(opt.dis_mat).float().cuda()
+        # MODIFICATION: Removed cuda
+        opt.dis_mat = torch.from_numpy(opt.dis_mat).float()
     else:
         opt.dis_mat = 0.0
 
@@ -72,6 +75,10 @@ def train(**kwargs):
     train_dataset = STAGNN_stamp_Dataset(opt, train=True, val=False)
     val_dataset = STAGNN_stamp_Dataset(opt, train=False, val=True)
     test_dataset = STAGNN_stamp_Dataset(opt, train=False, val=False)
+
+    # MODIFICATION less samples!
+    train_dataset = torch.utils.data.Subset(train_dataset, range(0, len(train_dataset) // 1500))  # 10% of dataset
+
     train_iter = torch.utils.data.DataLoader(
         train_dataset, batch_size, shuffle=True)
     val_iter = torch.utils.data.DataLoader(val_dataset, batch_size)
@@ -81,11 +88,12 @@ def train(**kwargs):
     n_route = opt.n_route
     n_his = opt.n_his
     n_pred = opt.n_pred
-    enc_spa_mask = torch.ones(1, 1, n_route, n_route).cuda()
-    enc_tem_mask = torch.ones(1, 1, n_his, n_his).cuda()
+    # MODIFICATION removing cuda
+    enc_spa_mask = torch.ones(1, 1, n_route, n_route)
+    enc_tem_mask = torch.ones(1, 1, n_his, n_his)
     dec_slf_mask = torch.tril(torch.ones(
-        (1, 1, n_pred + 1, n_pred + 1)), diagonal=0).cuda()
-    dec_mul_mask = torch.ones(1, 1, n_pred + 1, n_his).cuda()
+        (1, 1, n_pred + 1, n_pred + 1)), diagonal=0)
+    dec_mul_mask = torch.ones(1, 1, n_pred + 1, n_his)
 
     # loss
     loss_fn = nn.L1Loss()
@@ -98,7 +106,8 @@ def train(**kwargs):
             enc_spa_mask, enc_tem_mask,
             dec_slf_mask, dec_mul_mask
         )
-        model.cuda()
+        # MODIFICATION
+        # model.cuda()
 
         # optimizer
         lr = opt.lr
@@ -142,13 +151,15 @@ def train(**kwargs):
         start_time = time.perf_counter()
         best_perf = 0
         for epoch in range(start_epoch, start_epoch + epochs):
+            print(f"epoch: {epoch}")
             model.train()
             loss_sum, n = 0.0, 0
             for x, stamp, y in train_iter:
-                x, stamp, y = x.cuda(), stamp.cuda(), y.cuda()
-                x = x.type(torch.cuda.FloatTensor)
-                stamp = stamp.type(torch.cuda.LongTensor)
-                y = y.type(torch.cuda.FloatTensor)
+                # MODIFICATION: Removed cuda in every line
+                x, stamp, y = x, stamp, y
+                x = x.type(torch.FloatTensor)
+                stamp = stamp.type(torch.LongTensor)
+                y = y.type(torch.FloatTensor)
 
                 x = x.repeat(2, 1, 1, 1)
                 stamp = stamp.repeat(2, 1)
@@ -173,8 +184,10 @@ def train(**kwargs):
             val_loss = test(model, loss_fn, val_iter, opt)
             print('epoch', epoch, ' ', name, ', train loss:',
                   loss_sum / n, ', validation loss:', val_loss)
-            if epoch>200 and val_loss < min_val_loss**0.999:
-                if val_loss<min_val_loss:
+
+            if epoch > 2 and val_loss < min_val_loss**0.999:            # MODIFICATION of if epoch>200 and val_loss < min_val_loss**0.999:
+
+                if val_loss < min_val_loss:
                     min_val_loss = val_loss
                 print(
                     torch.abs(model.encoder.layer_stack[0].stgc.r1.data).sum())
@@ -187,8 +200,9 @@ def train(**kwargs):
                 torch.save(checkpoint, checkpoint_temp_path)
 
                 MAE, MAPE, RMSE = evaluate_metric(model, test_iter, opt)
+
                 print("MAE:", MAE, ", MAPE:", MAPE, "%, RMSE:", RMSE)
-                best_perf = MAE,MAPE,RMSE
+                best_perf = MAE, MAPE, RMSE
             writer.add_scalar('train loss', loss_sum / n, epoch)
             writer.add_scalar('test loss', val_loss, epoch)
 

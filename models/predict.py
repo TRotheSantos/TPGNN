@@ -48,7 +48,7 @@ def predict_stamp(model, src, stamp, trg, opt):
 
         lines = trg.shape[2]
 
-        trg = torch.zeros(trg.shape).cuda()
+        trg = torch.zeros(trg.shape)
 
         for i in range(lines):
             dec_input = model.trg_pro(trg, enc_output)

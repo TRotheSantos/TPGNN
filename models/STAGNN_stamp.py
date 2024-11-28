@@ -133,7 +133,13 @@ class timestamp(nn.Module):
         self.tempral_enc = TempoEnc(opt.n_his, opt.n_attr//4, opt.TE['no'])
 
     def forward(self, stamp):
-        time_emb = self.time_stamp(stamp)
+
+        # SCALED
+        min_timestamp = stamp.min()
+        max_timestamp = stamp.max()
+        scaled_time_stamp = (stamp - min_timestamp) / (max_timestamp - min_timestamp) * 95
+
+        time_emb = self.time_stamp(scaled_time_stamp.long())
         time_emb = self.tempral_enc(time_emb)
         return time_emb
 
@@ -168,18 +174,28 @@ class STAGNN_stamp(nn.Module):
         self.a = opt.a
         self.n_mask = opt.n_mask
         self.n_c = opt.n_c
+
     def forward(self, src, time_stamp, label, epoch=1e8):
         src_residual = src
         enc_input = self.src_pro(src, time_stamp)
-        time_emb = self.stamp_emb(time_stamp)
+
+        # SCALED
+        min_timestamp = time_stamp.min()
+        max_timestamp = time_stamp.max()
+        scaled_time_stamp = (time_stamp - min_timestamp) / (max_timestamp - min_timestamp) * 95
+
+        time_emb = self.stamp_emb(scaled_time_stamp.long())
         enc_output = self.encoder(enc_input, time_emb)
         enc_output_4head = enc_output
 
         trg = label[:, :, :self.n_pred, 0].unsqueeze(-1)
         loss = 0.0
         dec_output = None
+
         if self.T4N and epoch < self.T4N_end:
+
             for i in range(self.T4N_step):
+
                 dec_input = self.trg_pro(trg, enc_output_4head)
 
                 dec_output = self.decoder(dec_input, enc_output)

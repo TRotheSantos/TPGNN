@@ -20,9 +20,9 @@ class DefaultConfig(object):
     device = 0
 
     scaler = StandardScaler()
-    day_slot = 288
-    n_route, n_his, n_pred = 228, 12, 12
-    n_train, n_val, n_test = 34, 5, 5
+    day_slot = 96     # 288
+    n_route, n_his, n_pred = 11, 18, 12           # 228, 12, 12
+    n_train, n_val, n_test = 200, 10, 10   # 2298, 492, 494       # 34, 5, 5
 
     mode = 1
     # 1: 3, 6, 9, 12
@@ -46,7 +46,7 @@ class DefaultConfig(object):
             log_path = os.path.join(
                 "log", new_name)
         name = new_name
-    batch_size = 50
+    batch_size = 200           #  50
     lr = 1e-3
 
     a = 0.1
@@ -59,20 +59,20 @@ class DefaultConfig(object):
 
     resume = False
     start_epoch = 0
-    epochs = 1500
+    epochs = 4           #  1500
 
     n_layer = 1
     n_attr, n_hid = 64, 512
     reg_A = 1e-4
-    circle = 12*24
+    circle = 96   # 12*24
     drop_prob = 0.2
 
     # expand attr by conv
-    CE = {'use': True, 'kernel_size': 1, 'bias': False}
+    CE = {'use': True, 'kernel_size': 1, 'bias': False}  # Ture
     # expand attr by linear
     LE = {'use': False, 'bias': False}
     # spatio encoding
-    SE = {'use': True, 'separate': True, 'no': False}
+    SE = {'use': False, 'separate': True, 'no': False}      # True
     # tempo encoding
     TE = {'use': True, 'no': True}
 
@@ -84,10 +84,23 @@ class DefaultConfig(object):
 
     # TeaforN
     T4N = {'use': True, 'step': 2, 'end_epoch': 10000,
-           'change_head': True, 'change_enc': True}
-    stamp_path = "data/PeMS/time_stamp.npy"
-    data_path = 'data/PeMS/V_228.csv'
-    adj_matrix_path = 'data/PeMS/W_228.csv'
+           'change_head': True, 'change_enc': True}     # True
+
+    # MODIFICATION
+
+    # time stamps
+    stamp_path = "data/Big Electricity/Timestamps/ts_Germany_2023-2023_Biomass_Gas_HardCoal_Oil_HydrPS_HydrPS_HydrRiver_WaterRes_Solar_WindOff_WindOn.npy"
+
+    # data
+    data_path = 'data/Big Electricity/Germany_2023-2023_Biomass_Gas_HardCoal_Oil_HydrPS_HydrPS_HydrRiver_WaterRes_Solar_WindOff_WindOn.csv'
+
+    # corr matrix
+    adj_matrix_path = ('data/Big Electricity/Correlations/'
+                       'corr_Germany_2023-2023_Biomass_Gas_HardCoal_Oil_HydrPS_HydrPS_HydrRiver_WaterRes_Solar_WindOff_WindOn.csv')
+
+    # stamp_path = "data/PeMS/time_stamp.npy"
+    # data_path = 'data/PeMS/V_228.csv'
+    # adj_matrix_path = 'data/PeMS/W_228.csv'
     dis_mat = None
 
     prefix = 'log/' + name + '/'

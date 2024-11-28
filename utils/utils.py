@@ -53,6 +53,7 @@ def masked_mape(preds, labels, null_val=np.nan):
 
 
 def evaluate_metric(model, data_iter, opt):
+    new_num_features = opt.n_route
     if opt.mode == 1:
         model.eval()
         scaler = opt.scaler
@@ -67,9 +68,9 @@ def evaluate_metric(model, data_iter, opt):
 
             if 'pretext' in opt.model:
                 for x, y, z in data_iter:
-                    x, y = x.cuda(), y.cuda()
-                    x = x.type(torch.cuda.FloatTensor)
-                    y = y.type(torch.cuda.FloatTensor)
+                    # x, y = x.cuda(), y.cuda()
+                    x = x.type(torch.FloatTensor)   # cuda
+                    y = y.type(torch.FloatTensor)   # cuda
                     y_pred = predict(model, x, y, opt).permute(
                         0, 3, 2, 1).reshape(-1, 228)
 
@@ -100,17 +101,18 @@ def evaluate_metric(model, data_iter, opt):
                 return MAE, MAPE, RMSE
             elif 'stamp' in opt.model:
                 for x, stamp, y in data_iter:
-                    x, stamp, y = x.cuda(), stamp.cuda(), y.cuda()
-                    x = x.type(torch.cuda.FloatTensor)
-                    stamp = stamp.type(torch.cuda.LongTensor)
-                    y = y.type(torch.cuda.FloatTensor)
+                    x, stamp, y = x, stamp, y           # cuda
+                    x = x.type(torch.FloatTensor)       # cuda
+                    stamp = stamp.type(torch.LongTensor)    # cuda
+                    y = y.type(torch.FloatTensor)       # cuda
+
                     y_pred = predict_stamp(model, x, stamp, y, opt).permute(
-                        0, 3, 2, 1).reshape(-1, 228)
+                        0, 3, 2, 1).reshape(-1, new_num_features)
 
                     y_pred = scaler.inverse_transform(
-                        y_pred.cpu().numpy()).reshape(-1, 1, 12, 228)
+                        y_pred.cpu().numpy()).reshape(-1, 1, 12, new_num_features)
                     y = scaler.inverse_transform(
-                        y.permute(0, 3, 2, 1).reshape(-1, 228).cpu().numpy()).reshape(-1, 1, 12, 228)
+                        y.permute(0, 3, 2, 1).reshape(-1, new_num_features).cpu().numpy()).reshape(-1, 1, 12, new_num_features)
 
                     for i in range(length):
                         y_pred_select = y_pred[:, :, 3 * i + 2, :].reshape(-1)
@@ -134,16 +136,16 @@ def evaluate_metric(model, data_iter, opt):
                 return MAE, MAPE, RMSE
 
             for x, y in data_iter:
-                x, y = x.cuda(), y.cuda()
-                x = x.type(torch.cuda.FloatTensor)
-                y = y.type(torch.cuda.FloatTensor)
+                x, y = x, y     # cuda
+                x = x.type(torch.FloatTensor)   # cuda
+                y = y.type(torch.FloatTensor)   # cuda
                 y_pred = predict(model, x, y, opt).permute(
-                    0, 3, 2, 1).reshape(-1, 228)
+                    0, 3, 2, 1).reshape(-1, new_num_features)
 
                 y_pred = scaler.inverse_transform(
-                    y_pred.cpu().numpy()).reshape(-1, 1, 12, 228)
+                    y_pred.cpu().numpy()).reshape(-1, 1, 12, new_num_features)
                 y = scaler.inverse_transform(
-                    y.permute(0, 3, 2, 1).reshape(-1, 228).cpu().numpy()).reshape(-1, 1, 12, 228)
+                    y.permute(0, 3, 2, 1).reshape(-1, new_num_features).cpu().numpy()).reshape(-1, 1, 12, new_num_features)
 
                 for i in range(length):
                     y_pred_select = y_pred[:, :, 3 * i + 2, :].reshape(-1)
